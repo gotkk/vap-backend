@@ -1,0 +1,26 @@
+.screen{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100vw;
+    height: 100vh;
+    background: linear-gradient(#fcf803, #db6e00);
+}
+
+.block{
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+.text{
+    font-size: 8vh;
+    font-weight: bold;
+    color: #000000;
+    text-shadow: 5px 5px 10px #ff2c2c;
+}
+
+body{
+    margin: 0;
+}

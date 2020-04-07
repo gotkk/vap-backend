@@ -1,5 +1,5 @@
 const sql = require('mssql')
-const { dbConfig } = require('./configs');
+const { dbConfig } = require('../configs');
 
 const poolPromise = new sql.ConnectionPool(dbConfig)
     .connect()

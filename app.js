@@ -1,12 +1,10 @@
 var express = require('express');
 var bodyParser = require('body-parser');
+var path = require('path');
 var sql = require('mssql');
-// var cors = require('cors');
+var cors = require('cors');
 var { dbConfig } = require('./configs');
 var app = express();
-
-//Initializing connection string
-
 
 // Connect mssql
 // var dbConn = new sql.ConnectionPool(dbConfig);
@@ -16,10 +14,12 @@ var app = express();
 
 
 app.use(bodyParser.json());
-// app.use(cors());
+app.use(cors());
+
+app.use(express.static('./views'));
 
 app.get('/', (_req, res, _next) => {
-    res.send('this is spdb-backend application');
+    res.render('index.html');
 })
 
 

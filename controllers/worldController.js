@@ -1,4 +1,4 @@
-const { poolPromise, sql } = require('../db');
+const { poolPromise, sql } = require('../models/db');
 
 module.exports = {
     getWorldFromName: async (req, res, _next) => {
@@ -6,8 +6,8 @@ module.exports = {
         try {
             const pool = await poolPromise;
             const result = await pool.request()
-                .input('Namec', sql.Char, name)
-                .query('select * from World where NAME = @Namec')
+                .input('NameCountry', sql.Char, name)
+                .query('select Name, geom.MakeValid().STArea() AS Area from World where NAME = @NameCountry');
             res.json(result.recordset);
         } catch (err) {
             res.status(500);
