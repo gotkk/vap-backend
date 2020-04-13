@@ -1,11 +1,15 @@
 //Initializing connection string
 var dbConfig = {
-    user:  "user",
-    password: "1234",
-    server: "DESKTOP-5J7EGCA",
-    database: "SpatialDB"
+  user: process.env.DBUser,
+  password: process.env.DBPassword,
+  server: process.env.DBServer,
+  database: process.env.DB,
+  options: {
+    encrypt: true,
+    enableArithAbort: true,
+  }
 };
 
 module.exports = {
-    dbConfig
-}
+  dbConfig,
+};

@@ -1,24 +1,29 @@
 <!DOCTYPE html>
 <html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" type="text/css" href="./styles/index.css" />
+    <title>spdb-backend</title>
+  </head>
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" type="text/css" href="./styles/index.css">
-    <title>Document</title>
-</head>
-
-<body>
+  <body>
     <div class="screen">
-        <div class="block">
-            <span class="text">This is spdb-backend</span>
-            <br/>
-            <br/>
-            <span>Rest API</span>
-            <br/>
-            <span>path: [http://localhost:5000]/world/[the name of country for calculate area]</span>
+      <div class="block">
+        <span class="text">Rest API</span>
+        <br />
+        <br />
+        <span>This is the API for calculating the country area by the country name</span>
+        <br />
+        <div class="block-api">
+          <span
+            >GET: [http://localhost:5000]/world/[Country]</span
+          >
+          <br />
+          <br />
+          <span>Example: http://localhost:5000/world/thailand</span>
         </div>
+      </div>
     </div>
-</body>
-
+  </body>
 </html>
