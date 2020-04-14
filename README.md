@@ -13,11 +13,11 @@ DBPassword=password
 DBServer=server
 DB=database
 ```
-*** port is the port of running backend application.
-*** user is the username of MS SQL Server Database
-*** password is the password of MS SQL Server Database
-*** server is the server name of MS SQL Server Database 
-*** database is the database name of MS SQL Server Database
+* port is the port of running backend application.
+* user is the username of MS SQL Server Database.
+* password is the password of MS SQL Server Database.
+* server is the server name of MS SQL Server Database .
+* database is the database name of MS SQL Server Database.
 
 ### Installing
 Project setup
