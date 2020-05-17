@@ -19,10 +19,9 @@ module.exports = {
     //   res.status(500);
     //   res.send(err.message);
     // }
-
     try {
       if (!req.files) {
-        res.send({
+        res.status(200).json({
           status: false,
           message: "No file uploaded",
         });
@@ -45,13 +44,19 @@ module.exports = {
             if (err) throw err;
           });
         } catch (err) {
-          res.status(500);
-          res.send(err.message);
+          fs.unlink(`./uploads/${excel.name}`, (err) => {
+            if (err) throw err;
+          });
+          res.status(500).json({
+            status: false,
+            message: err.message,
+            result: {...err}
+          });
         }
 
-        res.send({
+        res.status(200).json({
           status: true,
-          message: "File is uploaded",
+          message: "This File is uploaded and inserted",
           data: {
             name: excel.name,
             mimetype: excel.mimetype,
@@ -61,8 +66,11 @@ module.exports = {
         });
       }
     } catch (err) {
-      res.status(500);
-      res.send(err);
+      res.status(500).json({
+        status: false,
+        message: err.message,
+        result: {...err}
+      });
     }
   },
   addGeomColumnAirPollutionPM25: async (req, res, _next) => {
@@ -80,32 +88,51 @@ module.exports = {
         SET     Geom = geometry::STGeomFromText(CONCAT('POINT (', longitude, ' ', latitude, ')'), 0)`
       );
 
-      res.send({
+      res.status(200).json({
         status: true,
         message: "AirPollutionPM25 is updated",
         result: { ...result },
       });
     } catch (err) {
-      res.status(500);
-      res.send(err.message);
+      res.status(500).json({
+        status: false,
+        message: err.message,
+        result: {...err}
+      });
     }
   },
-  dropGeomColumnAirPollutionPM25: async (req, res, _next) => {
+  clearAirPollutionPM25: async (req, res, _next) => {
     try {
       const pool = await poolPromise;
-      // alter table AirPollutionPM25 drop Geom
-      const result = await pool
-        .request()
-        .query("ALTER TABLE AirPollutionPM25 DROP COLUMN Geom");
-
-      res.send({
+      await pool.request().query("DROP TABLE AirPollutionPM25");
+      const result = await pool.request().query(
+        `CREATE TABLE AirPollutionPM25
+      (
+          country NVARCHAR(100),
+          city NVARCHAR(100),
+          Year INTEGER,
+          pm25 FLOAT,
+          latitude FLOAT,
+          longitude FLOAT,
+          population FLOAT,
+          wbinc16_text NVARCHAR(100),
+          Region NVARCHAR(100),
+          conc_pm25 NVARCHAR(40),
+          color_pm25 NVARCHAR(40),
+          PRIMARY KEY(city,Year, pm25)
+      )`
+      );
+      res.status(200).json({
         status: true,
-        message: "AirPollutionPM25 is updated",
+        message: "AirPollutionPM25 is Cleared and Creaded",
         result: { ...result },
       });
     } catch (err) {
-      res.status(500);
-      res.send(err.message);
+      res.status(500).json({
+        status: false,
+        message: err.message,
+        result: {...err}
+      });
     }
   },
 };
