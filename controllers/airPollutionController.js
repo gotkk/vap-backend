@@ -160,4 +160,50 @@ module.exports = {
       });
     }
   },
+  getTotalPopulationbyYearandColorPM25: async (req, res, next) => {
+    const { year, colorpm25 } = req.body;
+    try {
+      const pool = await poolPromise;
+      const result = await pool
+        .request()
+        .input("Year", sql.Int, year)
+        .input("ColorPM25", sql.Char, colorpm25).query(`
+          SELECT Year, color_pm25, SUM(population) AS 'total_population'
+          FROM AirPollutionPM25
+          WHERE Year=@Year AND color_pm25=@ColorPM25
+          GROUP BY Year, color_pm25
+        `);
+      res.status(200).json({
+        status: true,
+        result: result.recordsets,
+      });
+    } catch (err) {
+      res.status(500).json({
+        status: false,
+        message: err.message,
+        result: { ...err },
+      });
+    }
+  },
+  getAllCityPointAllCountrybyYear: async (req, res, next) => {
+    try {
+      const { year } = req.params;
+      const pool = await poolPromise;
+      const result = await pool.request().input("Year", sql.Int, year).query(`
+          SELECT p.country, p.city, p.Year, p.latitude, p.longitude, p.color_pm25
+          FROM AirPollutionPM25 AS p
+          WHERE p.Year=@year
+        `);
+      res.status(200).json({
+        status: true,
+        result: result.recordsets,
+      });
+    } catch (err) {
+      res.status(500).json({
+        status: false,
+        message: err.message,
+        result: { ...err },
+      });
+    }
+  },
 };
