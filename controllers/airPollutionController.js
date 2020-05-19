@@ -50,7 +50,7 @@ module.exports = {
           res.status(500).json({
             status: false,
             message: err.message,
-            result: {...err}
+            result: { ...err },
           });
         }
 
@@ -69,7 +69,7 @@ module.exports = {
       res.status(500).json({
         status: false,
         message: err.message,
-        result: {...err}
+        result: { ...err },
       });
     }
   },
@@ -97,11 +97,11 @@ module.exports = {
       res.status(500).json({
         status: false,
         message: err.message,
-        result: {...err}
+        result: { ...err },
       });
     }
   },
-  clearAirPollutionPM25: async (req, res, _next) => {
+  clearAirPollutionPM25: async (_req, res, _next) => {
     try {
       const pool = await poolPromise;
       await pool.request().query("DROP TABLE AirPollutionPM25");
@@ -131,7 +131,32 @@ module.exports = {
       res.status(500).json({
         status: false,
         message: err.message,
-        result: {...err}
+        result: { ...err },
+      });
+    }
+  },
+  getHistoryPM25byCountry: async (req, res, next) => {
+    const { country } = req.params;
+    try {
+      const pool = await poolPromise;
+      const result = await pool
+        .request()
+        .input("Country", sql.Char, country)
+        .query(
+          `SELECT country, city, Year, pm25
+      FROM AirPollutionPM25
+      WHERE country=@Country
+      ORDER BY Year ASC, City ASC`
+        );
+      res.status(200).json({
+        status: true,
+        result: result.recordsets,
+      });
+    } catch (err) {
+      res.status(500).json({
+        status: false,
+        message: err.message,
+        result: { ...err },
       });
     }
   },
