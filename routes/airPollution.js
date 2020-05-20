@@ -8,4 +8,7 @@ router.route('/clear').get(AirPollutionController.clearAirPollutionPM25);
 router.route('/historypm25_country/:country').get(AirPollutionController.getHistoryPM25byCountry);
 router.route('/total_population').post(AirPollutionController.getTotalPopulationbyYearandColorPM25);
 router.route('/visual_all_point/:year').get(AirPollutionController.getAllCityPointAllCountrybyYear);
+router.route('/50closest_bangkok').get(AirPollutionController.get50ClosestBangkok);
+router.route('/neighbor_bangkok').get(AirPollutionController.getNeighborThailand);
+router.route('/maxmin_latln_mbr').get(AirPollutionController.getMinMaxLatLnThaiForMBR);
 module.exports = router;

@@ -135,7 +135,7 @@ module.exports = {
       });
     }
   },
-  getHistoryPM25byCountry: async (req, res, next) => {
+  getHistoryPM25byCountry: async (req, res, _next) => {
     const { country } = req.params;
     try {
       const pool = await poolPromise;
@@ -160,7 +160,7 @@ module.exports = {
       });
     }
   },
-  getTotalPopulationbyYearandColorPM25: async (req, res, next) => {
+  getTotalPopulationbyYearandColorPM25: async (req, res, _next) => {
     const { year, colorpm25 } = req.body;
     try {
       const pool = await poolPromise;
@@ -185,7 +185,7 @@ module.exports = {
       });
     }
   },
-  getAllCityPointAllCountrybyYear: async (req, res, next) => {
+  getAllCityPointAllCountrybyYear: async (req, res, _next) => {
     try {
       const { year } = req.params;
       const pool = await poolPromise;
@@ -197,6 +197,129 @@ module.exports = {
       res.status(200).json({
         status: true,
         result: result.recordsets,
+      });
+    } catch (err) {
+      res.status(500).json({
+        status: false,
+        message: err.message,
+        result: { ...err },
+      });
+    }
+  },
+  get50ClosestBangkok: async (_req, res, _next) => {
+    try {
+      const pool = await poolPromise;
+      const result = await pool.request().query(`
+          DECLARE @Bangkok GEOMETRY
+          SELECT @Bangkok = Geom
+          FROM AirPollutionPM25
+          WHERE city='Bangkok'
+          SELECT TOP 50 country, city, latitude, longitude, color_pm25, Geom.MakeValid().STDistance(@Bangkok) AS Distance
+          FROM AirPollutionPM25
+          WHERE city != 'Bangkok'
+          ORDER BY Distance ASC
+        `);
+      res.status(200).json({
+        status: true,
+        result: result.recordsets,
+      });
+    } catch (err) {
+      res.status(500).json({
+        status: false,
+        message: err.message,
+        result: { ...err },
+      });
+    }
+  },
+  getNeighborThailand: async (_req, res, _next) => {
+    try {
+      const pool = await poolPromise;
+      const result = await pool.request().query(`
+          DECLARE @Thailand GEOMETRY
+          SELECT @Thailand = Geom
+          FROM world
+          WHERE NAME='Thailand'
+          
+          DECLARE @Neighbor TABLE(country NVARCHAR(255))
+          INSERT INTO @Neighbor 
+          SELECT NAME
+          FROM world
+          WHERE NAME != 'Thailand' AND (geom.MakeValid().STTouches(@Thailand)) = 1
+          
+          SELECT p.country, p.city,p.latitude, p.longitude, p.color_pm25
+          FROM AirPollutionPM25 AS p, @neighbor AS n
+          WHERE p.country = n.country 
+        `);
+      res.status(200).json({
+        status: true,
+        result: result.recordsets,
+      });
+    } catch (err) {
+      res.status(500).json({
+        status: false,
+        message: err.message,
+        result: { ...err },
+      });
+    }
+  },
+  getMinMaxLatLnThaiForMBR: async (_req, res, _next) => {
+    try {
+      const pool = await poolPromise;
+      const mbrresult = await pool.request().query(`
+          SELECT MAX(latitude) AS MaxLat, MIN(latitude) AS MinLat, MAX(longitude) AS MaxLn, MIN(longitude) AS MinLn
+          FROM AirPollutionPM25
+          WHERE country='Thailand'
+        `);
+      const pmresult = await pool.request().query(`
+          SELECT city, latitude, longitude, color_pm25
+          FROM AirPollutionPM25
+          WHERE country='Thailand'
+        `);
+      let mbrpoint = [];
+      let pmpoint = [];
+      let ring = [];
+      if (mbrresult && mbrresult.recordsets.length > 0 && mbrresult.recordsets[0].length > 0) {
+        let { MaxLat, MinLat, MaxLn, MinLn } = mbrresult.recordsets[0][0];
+        mbrpoint = [
+          {
+            latitude: MinLat,
+            longitude: MaxLn,
+            color_pm25: "defalut",
+          },
+          {
+            latitude: MaxLat,
+            longitude: MaxLn,
+            color_pm25: "defalut",
+          },
+          {
+            latitude: MaxLat,
+            longitude: MinLn,
+            color_pm25: "defalut",
+          },
+          {
+            latitude: MinLat,
+            longitude: MinLn,
+            color_pm25: "defalut",
+          },
+        ];
+        ring = [
+          [MaxLn, MinLat],
+          [MaxLn, MaxLat],
+          [MinLn, MaxLat],
+          [MinLn, MinLat],
+          [MaxLn, MinLat],
+        ];
+      }
+      if(pmresult && pmresult.recordsets.length > 0){
+        pmpoint = [...pmresult.recordsets[0]];
+      }
+      res.status(200).json({
+        status: true,
+        result: {
+          pmpoint: [...pmpoint],
+          mbrpoint: [...mbrpoint],
+          ring: [...ring],
+        },
       });
     } catch (err) {
       res.status(500).json({
