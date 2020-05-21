@@ -329,4 +329,54 @@ module.exports = {
       });
     }
   },
+  getHighestPoint: async (_req, res, _next) => {
+    try {
+      const pool = await poolPromise;
+      const result = await pool.request().query(`
+          SELECT p1.country, p1.city, p1.pm25, p1.latitude, p1.longitude, p1.color_pm25
+          FROM AirPollutionPM25 AS p1 
+          JOIN (
+            SELECT p2.country, MAX(p2.pm25) AS MaxPM25 
+            FROM AirPollutionPM25 AS p2 
+            WHERE p2.Year=2011 
+            GROUP BY p2.country
+          ) AS Highest
+          ON p1.country = Highest.country AND p1.pm25 = Highest.MaxPM25
+          ORDER BY p1.country
+        `);
+      res.status(200).json({
+        status: true,
+        result: result.recordsets,
+      });
+    } catch (err) {
+      res.status(500).json({
+        status: false,
+        message: err.message,
+        result: { ...err },
+      });
+    }
+  },
+  getLowIncome: async (req, res, _next) => {
+    let { year } = req.params;
+    try {
+      const pool = await poolPromise;
+      const result = await pool.request()
+      .input("Year", sql.Int, year)
+      .query(`
+          SELECT country, city, Year, pm25, wbinc16_text, latitude, longitude, color_pm25
+          FROM AirPollutionPM25
+          WHERE wbinc16_text='Low income' AND Year=@Year
+        `);
+      res.status(200).json({
+        status: true,
+        result: result.recordsets,
+      });
+    } catch (err) {
+      res.status(500).json({
+        status: false,
+        message: err.message,
+        result: { ...err },
+      });
+    }
+  },
 };

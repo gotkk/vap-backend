@@ -11,4 +11,7 @@ router.route('/visual_all_point/:year').get(AirPollutionController.getAllCityPoi
 router.route('/50closest_bangkok').get(AirPollutionController.get50ClosestBangkok);
 router.route('/neighbor_bangkok').get(AirPollutionController.getNeighborThailand);
 router.route('/maxmin_latln_mbr').get(AirPollutionController.getMinMaxLatLnThaiForMBR);
+router.route('/highest_no_city').get(AirPollutionController.getHighestPoint);
+router.route('/low_income/:year').get(AirPollutionController.getLowIncome);
+
 module.exports = router;
