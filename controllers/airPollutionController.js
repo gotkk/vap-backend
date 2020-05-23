@@ -1,4 +1,5 @@
 const fs = require("fs");
+const xlsxFile = require("read-excel-file/node");
 const { poolPromise, sql } = require("../models/db");
 
 module.exports = {
@@ -30,15 +31,22 @@ module.exports = {
         const filepath = "./uploads/" + excel.name;
         let result = {};
         excel.mv(filepath);
-
+        let first_sheet_name = "";
+        await xlsxFile(filepath, { getSheets: true }).then((sheets) => {
+          first_sheet_name = sheets[0].name;
+        });
         try {
           const pool = await poolPromise;
           // insert AirPollutionPM25
-          result = await pool.request().query(
-            `INSERT INTO AirPollutionPM25 SELECT * FROM OPENROWSET('Microsoft.ACE.OLEDB.12.0', 
-                'Excel 12.0;Database=${process.cwd()}\\uploads\\${excel.name}', 
-                [WHO_AirQuality_Database_2018$])`
-          );
+          result = await pool
+            .request()
+            .input("Sheet", sql.Char, first_sheet_name).query(`
+            INSERT INTO AirPollutionPM25(country, city, Year, pm25, latitude, longitude, 
+            population, wbinc16_text, Region, conc_pm25, color_pm25) 
+            SELECT * FROM OPENROWSET('Microsoft.ACE.OLEDB.12.0', 
+            'Excel 12.0;Database=${process.cwd()}\\uploads\\${excel.name}', 
+            [${first_sheet_name}$])
+          `);
 
           fs.unlink(`./uploads/${excel.name}`, (err) => {
             if (err) throw err;
@@ -77,9 +85,9 @@ module.exports = {
     try {
       const pool = await poolPromise;
       // alter table AirPollutionPM25 add Geom
-      await pool
-        .request()
-        .query("ALTER TABLE AirPollutionPM25 ADD Geom GEOMETRY");
+      // await pool
+      //   .request()
+      //   .query("ALTER TABLE AirPollutionPM25 ADD Geom GEOMETRY");
 
       // update AirPollutionPM25 Geom
       const result = await pool.request().query(
@@ -93,6 +101,27 @@ module.exports = {
         message: "AirPollutionPM25 is updated",
         result: { ...result },
       });
+    } catch (err) {
+      res.status(500).json({
+        status: false,
+        message: err.message,
+        result: { ...err },
+      });
+    }
+  },
+  getInsertTemplate: async (req, res, next) => {
+    try {
+      const InsertTemplate = `${process.cwd()}\\uploads\\template\\InsertTemplate.xlsx`;
+      res.setHeader(
+        "Content-Disposition",
+        "attachment; filename=InsertTemplate.xlsx"
+      );
+      res.setHeader(
+        "Content-Type",
+        "application/vnd.openxmlformats-officedocument.Sheet1.sheet"
+      );
+
+      res.download(InsertTemplate, "InsertTemplate.xlsx");
     } catch (err) {
       res.status(500).json({
         status: false,
@@ -249,10 +278,28 @@ module.exports = {
           SELECT p.country, p.city,p.latitude, p.longitude, p.color_pm25
           FROM AirPollutionPM25 AS p, @neighbor AS n
           WHERE p.country = n.country 
+          AND p.Year=2018
+        `);
+      const result_all = await pool.request().query(`
+          DECLARE @Thailand GEOMETRY
+          SELECT @Thailand = Geom
+          FROM world
+          WHERE NAME='Thailand'
+          
+          DECLARE @Neighbor TABLE(country NVARCHAR(255))
+          INSERT INTO @Neighbor 
+          SELECT NAME
+          FROM world
+          WHERE NAME != 'Thailand' AND (geom.MakeValid().STTouches(@Thailand)) = 1
+          
+          SELECT p.country, p.city,p.latitude, p.longitude, p.color_pm25
+          FROM AirPollutionPM25 AS p, @neighbor AS n
+          WHERE p.country = n.country 
         `);
       res.status(200).json({
         status: true,
         result: result.recordsets,
+        result_all: result_all.recordsets,
       });
     } catch (err) {
       res.status(500).json({
@@ -269,16 +316,37 @@ module.exports = {
           SELECT MAX(latitude) AS MaxLat, MIN(latitude) AS MinLat, MAX(longitude) AS MaxLn, MIN(longitude) AS MinLn
           FROM AirPollutionPM25
           WHERE country='Thailand'
+          AND Year=2009
         `);
       const pmresult = await pool.request().query(`
           SELECT city, latitude, longitude, color_pm25
           FROM AirPollutionPM25
           WHERE country='Thailand'
+          AND Year=2009
         `);
+      const mbrresult_all = await pool.request().query(`
+          SELECT MAX(latitude) AS MaxLat, MIN(latitude) AS MinLat, MAX(longitude) AS MaxLn, MIN(longitude) AS MinLn
+          FROM AirPollutionPM25
+          WHERE country='Thailand'
+        `);
+      const pmresult_all = await pool.request().query(`
+          SELECT city, latitude, longitude, color_pm25
+          FROM AirPollutionPM25
+          WHERE country='Thailand'
+        `);
+
       let mbrpoint = [];
       let pmpoint = [];
       let ring = [];
-      if (mbrresult && mbrresult.recordsets.length > 0 && mbrresult.recordsets[0].length > 0) {
+      let mbrpoint_all = [];
+      let pmpoint_all = [];
+      let ring_all = [];
+
+      if (
+        mbrresult &&
+        mbrresult.recordsets.length > 0 &&
+        mbrresult.recordsets[0].length > 0
+      ) {
         let { MaxLat, MinLat, MaxLn, MinLn } = mbrresult.recordsets[0][0];
         mbrpoint = [
           {
@@ -310,15 +378,61 @@ module.exports = {
           [MaxLn, MinLat],
         ];
       }
-      if(pmresult && pmresult.recordsets.length > 0){
+      if (pmresult && pmresult.recordsets.length > 0) {
         pmpoint = [...pmresult.recordsets[0]];
       }
+
+      if (
+        mbrresult_all &&
+        mbrresult_all.recordsets.length > 0 &&
+        mbrresult_all.recordsets[0].length > 0
+      ) {
+        let { MaxLat, MinLat, MaxLn, MinLn } = mbrresult_all.recordsets[0][0];
+        mbrpoint_all = [
+          {
+            latitude: MinLat,
+            longitude: MaxLn,
+            color_pm25: "defalut",
+          },
+          {
+            latitude: MaxLat,
+            longitude: MaxLn,
+            color_pm25: "defalut",
+          },
+          {
+            latitude: MaxLat,
+            longitude: MinLn,
+            color_pm25: "defalut",
+          },
+          {
+            latitude: MinLat,
+            longitude: MinLn,
+            color_pm25: "defalut",
+          },
+        ];
+        ring_all = [
+          [MaxLn, MinLat],
+          [MaxLn, MaxLat],
+          [MinLn, MaxLat],
+          [MinLn, MinLat],
+          [MaxLn, MinLat],
+        ];
+      }
+      if (pmresult_all && pmresult_all.recordsets.length > 0) {
+        pmpoint_all = [...pmresult_all.recordsets[0]];
+      }
+
       res.status(200).json({
         status: true,
         result: {
           pmpoint: [...pmpoint],
           mbrpoint: [...mbrpoint],
           ring: [...ring],
+        },
+        result_all: {
+          pmpoint: [...pmpoint_all],
+          mbrpoint: [...mbrpoint_all],
+          ring: [...ring_all],
         },
       });
     } catch (err) {
@@ -360,9 +474,7 @@ module.exports = {
     let { year } = req.params;
     try {
       const pool = await poolPromise;
-      const result = await pool.request()
-      .input("Year", sql.Int, year)
-      .query(`
+      const result = await pool.request().input("Year", sql.Int, year).query(`
           SELECT country, city, Year, pm25, wbinc16_text, latitude, longitude, color_pm25
           FROM AirPollutionPM25
           WHERE wbinc16_text='Low income' AND Year=@Year
