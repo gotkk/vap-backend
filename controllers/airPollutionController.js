@@ -109,19 +109,61 @@ module.exports = {
       });
     }
   },
-  getInsertTemplate: async (req, res, next) => {
+  getInsertTemplate: async (_req, res, _next) => {
     try {
-      const InsertTemplate = `${process.cwd()}\\uploads\\template\\InsertTemplate.xlsx`;
+      const InsertTemplate = `${process.cwd()}\\downloads\\template\\InsertTemplate.xlsx`;
       res.setHeader(
         "Content-Disposition",
         "attachment; filename=InsertTemplate.xlsx"
       );
       res.setHeader(
         "Content-Type",
-        "application/vnd.openxmlformats-officedocument.Sheet1.sheet"
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
       );
 
       res.download(InsertTemplate, "InsertTemplate.xlsx");
+    } catch (err) {
+      res.status(500).json({
+        status: false,
+        message: err.message,
+        result: { ...err },
+      });
+    }
+  },
+  getAvgPm25ByCountry: async (_req, res, _next) => {
+    try {
+      const AvgPm25ByCountry = `${process.cwd()}\\downloads\\resource\\AvgPm25ByCountry.xls`;
+      res.setHeader(
+        "Content-Disposition",
+        "attachment; filename=InsertTemplate.xlsx"
+      );
+      res.setHeader(
+        "Content-Type",
+        "application/vnd.ms-excel"
+      );
+
+      res.download(AvgPm25ByCountry, "AvgPm25ByCountry.xls");
+    } catch (err) {
+      res.status(500).json({
+        status: false,
+        message: err.message,
+        result: { ...err },
+      });
+    }
+  },
+  getCountryAndCityPMthan50: async (_req, res, _next) => {
+    try {
+      const CountryAndCityPMthan50 = `${process.cwd()}\\downloads\\resource\\CountryAndCityPMthan50.xls`;
+      res.setHeader(
+        "Content-Disposition",
+        "attachment; filename=InsertTemplate.xlsx"
+      );
+      res.setHeader(
+        "Content-Type",
+        "application/vnd.ms-excel"
+      );
+
+      res.download(CountryAndCityPMthan50, "CountryAndCityPMthan50.xls");
     } catch (err) {
       res.status(500).json({
         status: false,
