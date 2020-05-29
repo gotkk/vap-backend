@@ -93,7 +93,7 @@ module.exports = {
       const result = await pool.request().query(
         `DECLARE @geom GEOMETRY;
         UPDATE  AirPollutionPM25
-        SET     Geom = geometry::STGeomFromText(CONCAT('POINT (', longitude, ' ', latitude, ')'), 0)`
+        SET     Geom = geometry::STGeomFromText(CONCAT('POINT (', longitude, ' ', latitude, ')'), 4326)`
       );
 
       res.status(200).json({
@@ -489,16 +489,9 @@ module.exports = {
     try {
       const pool = await poolPromise;
       const result = await pool.request().query(`
-          SELECT p1.country, p1.city, p1.pm25, p1.latitude, p1.longitude, p1.color_pm25
-          FROM AirPollutionPM25 AS p1 
-          JOIN (
-            SELECT p2.country, MAX(p2.pm25) AS MaxPM25 
-            FROM AirPollutionPM25 AS p2 
-            WHERE p2.Year=2011 
-            GROUP BY p2.country
-          ) AS Highest
-          ON p1.country = Highest.country AND p1.pm25 = Highest.MaxPM25
-          ORDER BY p1.country
+          SELECT country, city, pm25, latitude, longitude, color_pm25
+          FROM AirPollutionPM25 
+          WHERE conc_pm25 = '>50' and year = 2011
         `);
       res.status(200).json({
         status: true,

@@ -1,5 +1,5 @@
-# spdb-backend
-This is the backend web application takes the REST API response the result of the country area.
+# vap-backend
+This is the backend web application takes the REST API response the result of the country area and data for visualizing air pollution.
 
 ## Getting Started
 Install [Node.js](https://nodejs.org/en/).
