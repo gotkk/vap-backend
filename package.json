@@ -17,6 +17,6 @@
     "express-promise-router": "^3.0.3",
     "mssql": "^6.2.0",
     "read-excel-file": "^4.0.6",
-    "xlsx": "^0.16.1"
+    "xlsx": "^0.17.0"
   }
 }
