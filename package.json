@@ -16,7 +16,7 @@
     "express-fileupload": "^1.1.7-alpha.3",
     "express-promise-router": "^3.0.3",
     "mssql": "^6.2.0",
-    "read-excel-file": "^4.0.6",
+    "read-excel-file": "^4.1.0",
     "xlsx": "^0.16.1"
   }
 }
